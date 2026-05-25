@@ -35,36 +35,58 @@ class BlackJack(MDPsim):
         self.cartas_jugador = [self.reparte_carta(), self.reparte_carta()]
         self.cartas_crupier = [self.reparte_carta(), self.reparte_carta()]
 
-        suma_jugador = sum(self.cartas_jugador)
+        suma_jugador, as_usable = self.evaluar_mano(self.cartas_jugador)
 
-        #TODO: terminar
+        self.blackjack_natural = self._checar_blackjack_natural(suma_jugador)
 
-        pass
-    
+        while suma_jugador < 12:
+            self.cartas_jugador.append(self.reparte_carta())
+            suma_jugador, as_usable = self._evaluar_mano(self.cartas_jugador)
+
+        return (suma_jugador, self.cartas_crupier[1], as_usable)
+
     def acciones_legales(self, s):
-        # TODO: implementar las acciones legales del blackjack
-        raise NotImplementedError("Implementa las acciones legales del blackjack")
+
+        return [] if s == self.estado_terminal else self.acciones
     
     def recompensa(self, s, a, s_):
         # TODO: implementar la recompensa del blackjack
         raise NotImplementedError("Implementa la recompensa del blackjack")
     
     def transicion(self, s, a):
-        # TODO: implementar la transición del blackjack
-        raise NotImplementedError("Implementa la transición del blackjack")
+
+        if a == "Pedir":
+            self.cartas_jugador.append(self.reparte_carta())
+            suma_jugador, as_usable = self._evaluar_mano(self.cartas_jugador)
+
+            if suma_jugador > 21:
+                return self.estado_terminal
+            else:
+                return (suma_jugador, self.cartas_crupier[1], as_usable)
+
+        elif a == "Plantarse":
+            while sum(self.cartas_crupier) < 17:
+                self.cartas_crupier.append(self.reparte_carta())
+                suma_crupier = self._evaluar_mano(self.cartas_jugador)[0]
+            
+            return self.estado_terminal
     
     def es_terminal(self, s):
-        # TODO: implementar la condición de estado terminal del blackjack
-        raise NotImplementedError("Implementa la condición de estado terminal del blackjack")
+        return True if s == self.estado_terminal else False
     
     def reparte_carta():
         from random import choice
         return choice(BARAJA)
     
-    def evaluar_mano(cartas):
+    def _evaluar_mano(self, cartas):
+        """
+        Regresa tupla (suma, as_usable)
+        """
         suma = sum(cartas)
+        return suma + 10, True if (1 in cartas and suma <= 21) else suma, False
     
-        return suma+10, True if (1 in cartas and suma <= 21) else suma, False
+    def _checar_blackjack_natural(self, suma_cartas):
+        return True if suma_cartas == 21 else False
 
 
 if __name__ == "__main__":
