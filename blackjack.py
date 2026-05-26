@@ -24,7 +24,7 @@ class BlackJack(MDPsim):
         for suma_jugador in range(12,22):
             for carta_crupier in range(1,11):
                 for as_usable in [True, False]:
-                    self.estados.append(suma_jugador, carta_crupier, as_usable)
+                    self.estados.append((suma_jugador, carta_crupier, as_usable))
 
         self.estado_terminal = "Terminal"
         self.estados.append(self.estado_terminal)
@@ -35,7 +35,7 @@ class BlackJack(MDPsim):
         self.cartas_jugador = [self.reparte_carta(), self.reparte_carta()]
         self.cartas_crupier = [self.reparte_carta(), self.reparte_carta()]
 
-        suma_jugador, as_usable = self.evaluar_mano(self.cartas_jugador)
+        suma_jugador, as_usable = self._evaluar_mano(self.cartas_jugador)
 
         self.blackjack_natural = self._checar_blackjack_natural(suma_jugador)
 
@@ -50,10 +50,27 @@ class BlackJack(MDPsim):
         return [] if s == self.estado_terminal else self.acciones
     
     def recompensa(self, s, a, s_):
-        # TODO: implementar la recompensa del blackjack
-        raise NotImplementedError("Implementa la recompensa del blackjack")
+        if s_ == self.estado_terminal and s != self.estado_terminal:
+            suma_j = s[0]
+            suma_c = self._evaluar_mano(self.cartas_crupier)[0]
+
+            if self.blackjack_natural and a == "Plantarse":
+                return 1.5
+            if suma_j > 21:
+                return -1
+            if suma_c > 21:
+                return 1
+            if suma_j > suma_c:
+                return 1
+            if suma_j == suma_c:
+                return 0
+            return -1
+        return 0.0
     
     def transicion(self, s, a):
+
+        if s == self.estado_terminal:
+            return self.estado_terminal
 
         if a == "Pedir":
             self.cartas_jugador.append(self.reparte_carta())
@@ -65,15 +82,17 @@ class BlackJack(MDPsim):
                 return (suma_jugador, self.cartas_crupier[1], as_usable)
 
         elif a == "Plantarse":
-            while sum(self.cartas_crupier) < 17:
+            suma_crupier = self._evaluar_mano(self.cartas_crupier)[0]
+            while suma_crupier < 17:
                 self.cartas_crupier.append(self.reparte_carta())
-                suma_crupier = self._evaluar_mano(self.cartas_jugador)[0]
+                suma_crupier = self._evaluar_mano(self.cartas_crupier)[0]
             
             return self.estado_terminal
     
     def es_terminal(self, s):
         return True if s == self.estado_terminal else False
     
+    @staticmethod
     def reparte_carta():
         from random import choice
         return choice(BARAJA)
@@ -83,7 +102,10 @@ class BlackJack(MDPsim):
         Regresa tupla (suma, as_usable)
         """
         suma = sum(cartas)
-        return suma + 10, True if (1 in cartas and suma <= 21) else suma, False
+        if 1 in cartas and suma + 10 <= 21:
+            return suma + 10, True
+        else:
+            return suma, False
     
     def _checar_blackjack_natural(self, suma_cartas):
         return True if suma_cartas == 21 else False
