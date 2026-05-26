@@ -16,22 +16,24 @@ class BlackJack(MDPsim):
     
     """
     def __init__(self, gama):
+        
         self.cartas_jugador = []
         self.cartas_crupier = []
         self.estados = []
         self.gama = gama
 
-        for suma_jugador in range(12,22):
-            for carta_crupier in range(1,11):
-                for as_usable in [True, False]:
-                    self.estados.append((suma_jugador, carta_crupier, as_usable))
+        self.estados = [(suma_jugador, carta_crupier, as_usable) 
+                         for suma_jugador in range(12, 22) 
+                         for carta_crupier in range(1, 11) 
+                         for as_usable in [True, False]]
 
-        self.estado_terminal = "Terminal"
+        self.estado_terminal = -1
         self.estados.append(self.estado_terminal)
 
-        self.acciones = ["Plantarse", "Pedir"]
+        self.acciones = [0, 1] # Plantarse, Pedir
         
     def estado_inicial(self):
+        
         self.cartas_jugador = [self.reparte_carta(), self.reparte_carta()]
         self.cartas_crupier = [self.reparte_carta(), self.reparte_carta()]
 
@@ -50,11 +52,13 @@ class BlackJack(MDPsim):
         return [] if s == self.estado_terminal else self.acciones
     
     def recompensa(self, s, a, s_):
+        
         if s_ == self.estado_terminal and s != self.estado_terminal:
+            
             suma_j = s[0]
             suma_c = self._evaluar_mano(self.cartas_crupier)[0]
 
-            if self.blackjack_natural and a == "Plantarse":
+            if self.blackjack_natural and a == 0:
                 return 1.5
             if suma_j > 21:
                 return -1
@@ -65,6 +69,7 @@ class BlackJack(MDPsim):
             if suma_j == suma_c:
                 return 0
             return -1
+        
         return 0.0
     
     def transicion(self, s, a):
@@ -72,7 +77,7 @@ class BlackJack(MDPsim):
         if s == self.estado_terminal:
             return self.estado_terminal
 
-        if a == "Pedir":
+        if a == 1: # Pedir
             self.cartas_jugador.append(self.reparte_carta())
             suma_jugador, as_usable = self._evaluar_mano(self.cartas_jugador)
 
@@ -81,8 +86,9 @@ class BlackJack(MDPsim):
             else:
                 return (suma_jugador, self.cartas_crupier[1], as_usable)
 
-        elif a == "Plantarse":
+        elif a == 0: # Plantarse
             suma_crupier = self._evaluar_mano(self.cartas_crupier)[0]
+            
             while suma_crupier < 17:
                 self.cartas_crupier.append(self.reparte_carta())
                 suma_crupier = self._evaluar_mano(self.cartas_crupier)[0]
@@ -112,28 +118,25 @@ class BlackJack(MDPsim):
 
 
 if __name__ == "__main__":
-    pass
 
-    # blackjack = BlackJack(gama=1,...) # TODO: agregar los parámetros necesarios para el blackjack   
+    blackjack = BlackJack(gama=1)
 
-    # # TODO: definir los parámetros de SARSA y Q-learning, luego crear las instancias 
-    # # de cada algoritmo
-    # Q_sarsa = SARSA( blackjack, alfa=..., epsilon=..., n_ep=..., n_iter=...)
-    # Q_learning = Q_learning( blackjack, alfa=..., epsilon=..., n_ep=..., n_iter=...)
+    Q_sarsa = SARSA( blackjack, alfa=0.2, epsilon=0.02, n_ep=10_000, n_iter=100)
+    Q_learning = Q_learning( blackjack, alfa=0.2, epsilon=0.02, n_ep=10_000, n_iter=100)
 
     # # Encuentra las políticas óptimas para cada algoritmo
-    # pi_s = PoliticaGreedy(Q_sarsa)
-    # pi_q = PoliticaGreedy(Q_learning)
+    pi_s = PoliticaGreedy(Q_sarsa)
+    pi_q = PoliticaGreedy(Q_learning)
 
-    # # Imprime las políticas óptimas para cada estado no terminal
-    # print("Estado".center(10) + '|' +  "SARSA".center(10) + '|' + "Q-learning".center(10))
-    # print("-"*10 + '|' + "-"*10 + '|' + "-"*10)
-    # for s in blackjack.estados:
-    #     if not blackjack.es_terminal(s):
-    #         print(str(s).center(10) + '|' 
-    #               + str(pi_s(s)).center(10) + '|' 
-    #               + str(pi_q(s)).center(10))
-    # print("-"*10 + '|' + "-"*10 + '|' + "-"*10)
+    # Imprime las políticas óptimas para cada estado no terminal
+    print("Estado".center(10) + '|' +  "SARSA".center(10) + '|' + "Q-learning".center(10))
+    print("-"*10 + ' |' + "-"*10 + ' |' + "-"*10)
+    for s in blackjack.estados:
+        if not blackjack.es_terminal(s):
+            print(str(s).center(10) + '|' 
+                  + str(pi_s(s)).center(10) + '|' 
+                  + str(pi_q(s)).center(10))
+    print("-"*10 + '|' + "-"*10 + '|' + "-"*10)
 
 
 """
