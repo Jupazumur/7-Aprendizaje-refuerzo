@@ -55,7 +55,7 @@ class BlackJack(MDPsim):
         
         if s_ == self.estado_terminal and s != self.estado_terminal:
             
-            suma_j = s[0]
+            suma_j = self._evaluar_mano(self.cartas_jugador)[0]
             suma_c = self._evaluar_mano(self.cartas_crupier)[0]
 
             if self.blackjack_natural and a == 0:
@@ -121,8 +121,8 @@ if __name__ == "__main__":
 
     blackjack = BlackJack(gama=1)
 
-    Q_sarsa = SARSA( blackjack, alfa=0.2, epsilon=0.02, n_ep=10_000, n_iter=100)
-    Q_learning = Q_learning( blackjack, alfa=0.2, epsilon=0.02, n_ep=10_000, n_iter=100)
+    Q_sarsa = SARSA( blackjack, alfa=0.1, epsilon=0.02, n_ep=500000, n_iter=30)
+    Q_learning = Q_learning( blackjack, alfa=0.1, epsilon=0.02, n_ep=500000, n_iter=30)
 
     # # Encuentra las políticas óptimas para cada algoritmo
     pi_s = PoliticaGreedy(Q_sarsa)
@@ -130,7 +130,7 @@ if __name__ == "__main__":
 
     # Imprime las políticas óptimas para cada estado no terminal
     print("Estado".center(10) + '|' +  "SARSA".center(10) + '|' + "Q-learning".center(10))
-    print("-"*10 + ' |' + "-"*10 + ' |' + "-"*10)
+    print("-"*10 + '|' + "-"*10 + '|' + "-"*10)
     for s in blackjack.estados:
         if not blackjack.es_terminal(s):
             print(str(s).center(10) + '|' 
